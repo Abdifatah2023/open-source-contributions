@@ -3,7 +3,7 @@
 **Contribution Number:** 1  
 **Student:** Cabdifataax Maxamuud  
 **Issue:** [getsolus/packages #4121](https://github.com/getsolus/packages/issues/4121)  
-**Status:** Phase II – Implementation In Progress
+**Status:** Phase II – In Review. Batch 1 PR [#9381](https://github.com/getsolus/packages/pull/9381) received a **changes-requested** review; rework in progress. Only `hunspell-fr` and `hunspell-it` have verified Anitya IDs so far; the other five Batch 1 files were reverted to templates after their IDs proved invalid. Batch 2 is authored locally but not yet committed.
 
 ---
 
@@ -172,11 +172,11 @@ Using UMPIRE framework (adapted):
 
 1. ~~Run the `find` command to confirm the current list of remaining packages~~ ✓ Confirmed: 14 actionable packages (`python2-cairo` and `sqlheavy` are gone from the repo)
 
-**Implement:** Batch 1 (7 `hunspell-*`/`hyphen-*` packages) committed on `add-monitoring-yml-batch1` and submitted as PR [#9381](https://github.com/getsolus/packages/pull/9381); Batch 2 (7 Python/proprietary packages) authored and pending commit. See **Code Changes** for branch and per-package commit links.
+**Implement:** Batch 1 (7 `hunspell-*`/`hyphen-*` packages) committed on `add-monitoring-yml-batch1` and submitted as PR [#9381](https://github.com/getsolus/packages/pull/9381). The PR then received a **changes-requested** review (see **Pull Request → Maintainer Review**), which surfaced that several of the Anitya IDs did not actually resolve to useful upstream release data. Five of the seven Batch 1 files were reverted to their template skeletons pending real upstream sources; only `hunspell-fr` and `hunspell-it` remain filled in. Batch 2 (7 Python/proprietary packages) is authored locally but held back and not yet committed. See **Code Changes** for branch and per-package commit links.
 
-**Review:** Each file was checked against the schema at the [Solus monitoring docs](https://help.getsol.us/docs/packaging/monitoring.yml/), validated as YAML, and its Anitya ID resolved at `https://release-monitoring.org/project/<id>/`. See **Testing Strategy**.
+**Review:** Each file was checked against the schema in the reference examples and validated as valid YAML. The critical gap caught in review: passing YAML validation is *not* the same as a working Anitya ID — an `id` can be syntactically fine yet point at a project with no usable release feed. Anitya IDs must be verified to return real version info at `https://release-monitoring.org/project/<id>/`, which is now the corrective focus. See **Testing Strategy**.
 
-**Evaluate:** After each PR merges, confirm the packages no longer appear in the coverage `find` command output.
+**Evaluate:** After each PR merges, confirm the packages no longer appear in the coverage `find` command output. As of this update, PR #9381 has **not** merged — it is open with requested changes.
 
 ---
 
@@ -228,20 +228,25 @@ for f in $(git ls-files -o --exclude-standard '*/monitoring.yaml') packages/h/*/
 done
 ```
 
-**Result:** all 14 files parsed cleanly with a numeric `id` (e.g. `iscan` → 390774, `iscan-data` → 390771, `msodbcsql` → 390777, `python-sip-4` → 13626, `python-sphinx-lv2-theme` → 267121, `python-sphinx-rtd-theme` → 232897, `python2-setuptools` → 4021).
+**Result (initial):** all files parsed as valid YAML. **Important correction:** valid YAML with a numeric `id` was treated as "done" too early. Maintainer review then showed that several of the numeric IDs — particularly the sequential `390xxx` IDs, some of which were Anitya projects I had created myself during this work — did **not** return useful upstream release data. As a result, the current verified state is narrower than this check implied:
+
+- **Verified, working Anitya IDs:** `hunspell-fr` → 130209 (grammalecte), `hunspell-it` → 390712. Batch 2's pre-existing project IDs (`python-sip-4` → 13626, `python-sphinx-rtd-theme` → 232897, `python-sphinx-lv2-theme` → 267121, `python2-setuptools` → 4021) also resolve, but Batch 2 is not yet committed or submitted.
+- **Reverted to template (`id: ~`):** `hunspell-pt-br`, `hunspell-ru`, `hunspell-sl`, `hyphen-de`, `hyphen-fr` — their IDs did not resolve to usable release feeds, so they were rolled back rather than shipped with bad data.
+
+Lesson: a numeric `id` is necessary but not sufficient — the ID must actually point at a project Anitya can scrape for versions.
 
 ### Validation Checklist
 
-- [x] No package directory is missing a monitoring file (coverage `find` returns no output)
-- [x] Every new `monitoring.yaml` is valid YAML with a numeric `releases.id` (verified via `yaml.safe_load`)
-- [x] Each file sets `cpe: ~` with a dated `# No known CPE, checked YYYY-MM-DD` comment (none of these packages have a CPE)
-- [x] Each file sets `rss` to a feed URL or explicit `~`
+- [x] Every authored `monitoring.yaml` is syntactically valid YAML (verified via `yaml.safe_load`)
 - [x] Packages with `id: ~` elsewhere in the repo confirmed intentional (maintainer comment present)
-- [ ] Final cross-check: confirm each `id` resolves at `https://release-monitoring.org/project/<id>/` before opening each PR
+- [x] `hunspell-fr` (130209) and `hunspell-it` (390712) IDs confirmed to resolve at `https://release-monitoring.org/project/<id>/` with real version data
+- [ ] **Blocking:** confirm the remaining Batch 1 IDs resolve to a usable release feed — currently failing, so those five files are reverted to templates
+- [ ] Locate valid upstream release sources (or an accepted fallback) for `hunspell-pt-br`, `hunspell-ru`, `hunspell-sl`, `hyphen-de`, `hyphen-fr`
+- [ ] Re-verify Batch 2 IDs and CPEs, then commit and open a second PR (only after #9381 is resolved)
 
 ### Manual Testing
 
-Each Anitya ID was looked up on release-monitoring.org during authoring to confirm it points at the correct upstream project. CPE names were checked against the NVD CPE browser; none of the 14 packages had a published CPE, so each is recorded as `cpe: ~` with a dated comment per the schema.
+Anitya IDs were looked up on release-monitoring.org during authoring. This is where the process broke down: syntactic lookups were treated as confirmation too quickly, and several IDs (including some I created on Anitya myself) turned out not to expose real releases. Manual re-verification — actually opening each `https://release-monitoring.org/project/<id>/` page and confirming it shows recent versions — is now the standard before an ID is committed. CPE names were checked against the NVD CPE browser; none of these packages have a published CPE, so each is recorded as `cpe: ~` with a dated comment per the schema.
 
 ---
 
@@ -279,10 +284,24 @@ All 14 actionable packages from the remaining list have now had a `monitoring.ya
 
 Work was split into two batches per maintainer guidance (5–10 packages per PR):
 
-- **Batch 1 — committed and submitted as PR [#9381](https://github.com/getsolus/packages/pull/9381) (7 packages):** the dictionary/hyphenation set `hunspell-fr` (Anitya 130209), `hunspell-it` (390712), `hunspell-pt-br` (390759), `hunspell-ru` (390761), `hunspell-sl` (390767), `hyphen-de` (390754), `hyphen-fr` (390769). Each was scaffolded, given its looked-up Anitya `id`, set to `rss: ~` where no feed exists, and marked `cpe: ~` with a dated `# No known CPE` comment. One commit per package (see Code Changes).
-- **Batch 2 — authored, pending commit (7 packages):** `iscan`, `iscan-data`, `msodbcsql`, `python-sip-4`, `python-sphinx-lv2-theme`, `python-sphinx-rtd-theme`, `python2-setuptools`. New `monitoring.yaml` files exist in the working tree (currently untracked) with Anitya IDs filled in (e.g. `iscan` → id `390774`, `python-sip-4` → id `13626`), `cpe: ~`, and a `# No known CPE, checked 2026-06-19` note. These will be committed and opened as a second PR once Batch 1 is reviewed.
+- **Batch 1 — committed and submitted as PR [#9381](https://github.com/getsolus/packages/pull/9381) (7 packages):** the dictionary/hyphenation set `hunspell-fr` (130209), `hunspell-it` (390712), `hunspell-pt-br` (390759), `hunspell-ru` (390761), `hunspell-sl` (390767), `hyphen-de` (390754), `hyphen-fr` (390769). Each was scaffolded, given its looked-up Anitya `id`, set to `rss: ~` where no feed exists, and marked `cpe: ~` with a dated `# No known CPE` comment. One commit per package (see Code Changes).
+- **Batch 2 — authored, pending commit (7 packages):** `iscan`, `iscan-data`, `msodbcsql`, `python-sip-4`, `python-sphinx-lv2-theme`, `python-sphinx-rtd-theme`, `python2-setuptools`. New `monitoring.yaml` files exist in the working tree (currently untracked) with Anitya IDs filled in (e.g. `iscan` → id `390774`, `python-sip-4` → id `13626`), `cpe: ~`, and a `# No known CPE, checked 2026-06-19` note.
 
 A secondary audit checked every `monitoring.yaml` in the repository for a numerical Anitya ID. 112 packages were found with `id: ~` (YAML null) — this is intentional: each contains a comment (e.g. referencing issue #4533) confirming the package will never benefit from automated monitoring. No corrective action was needed.
+
+### Week 4 Progress — Review & Rework
+
+PR #9381 received a **changes-requested** review from maintainer `davidjharder`. Two problems drove it:
+
+1. **Invalid Anitya IDs.** The maintainer asked, *"did you create some of these release-monitoring entries as well? Some don't work."* This was correct — several of the `390xxx` IDs pointed at Anitya projects (some I had created myself) that did not expose real upstream releases. Passing YAML validation had masked this.
+2. **PR hygiene / AI transparency.** The PR had accidentally dropped the pull-request template and included a stray `contribution_readme.md` committed into the packages repo itself (separate from *this* portfolio write-up). Solus has no formal AI policy yet, so the maintainer set an explicit bar: contributors must show they manually verified any AI output and must disclose, in their own words, where and how AI was used.
+
+**Corrective actions taken / in progress:**
+
+- Removed the stray `contribution_readme.md` from the packages PR (commit `672a4cce`) and restored the standard PR template, including the licensing agreement checkbox.
+- Reverted the five unverifiable Batch 1 files (`hunspell-pt-br`, `hunspell-ru`, `hunspell-sl`, `hyphen-de`, `hyphen-fr`) to `id: ~` templates rather than ship bad IDs; kept `hunspell-fr` and `hunspell-it`, whose IDs were confirmed to resolve.
+- Posted an AI-usage explanation on the PR (see **AI Usage Disclosure**).
+- Began hunting for real upstream release sources for the reverted packages. Two were re-established via upstream feeds; the remaining five are hard because several `hunspell-*`/`hyphen-*` sources are unusual and lack a scrapeable release/tags feed — which the maintainer confirmed is *why* these were among the last packages without monitoring files. An open question is pending with the maintainer: whether the Fedora Updates System can serve as an accepted fallback upstream source for Anitya when no native feed exists.
 
 ### Code Changes
 
@@ -295,7 +314,7 @@ A secondary audit checked every `monitoring.yaml` in the repository for a numeri
   - [`cc3ef05`](https://github.com/Abdifatah2023/packages/commit/cc3ef05a09) — `hunspell-sl: Add monitoring.yaml`
   - [`6f99157`](https://github.com/Abdifatah2023/packages/commit/6f99157ad1) — `hyphen-de: Add monitoring.yaml`
   - [`bc1505f`](https://github.com/Abdifatah2023/packages/commit/bc1505ffbb) — `hyphen-fr: Add monitoring.yaml`
-- **Pending (Batch 2, not yet committed):** `iscan`, `iscan-data`, `msodbcsql`, `python-sip-4`, `python-sphinx-lv2-theme`, `python-sphinx-rtd-theme`, `python2-setuptools` — new `monitoring.yaml` files authored in the working tree (untracked), ready to commit one-per-package once Batch 1 is reviewed.
+- **Pending (Batch 2, not yet committed):** `iscan`, `iscan-data`, `msodbcsql`, `python-sip-4`, `python-sphinx-lv2-theme`, `python-sphinx-rtd-theme`, `python2-setuptools` — new `monitoring.yaml` files authored in the working tree (untracked). Held back until #9381 is resolved and each ID has been re-verified against release-monitoring.org under the corrected process.
 - **Pull request (Batch 1):** [getsolus/packages #9381](https://github.com/getsolus/packages/pull/9381) — opened against upstream, references #4121.
 - **Approach decisions:** Following maintainer guidance — one PR at a time, 5–10 packages per PR, each package as its own commit. The `hunspell-*` / `hyphen-*` dictionary packages formed the first batch; the Python and proprietary packages form the second.
 
@@ -307,23 +326,27 @@ A secondary audit checked every `monitoring.yaml` in the repository for a numeri
 
 **Summary:** Adds `monitoring.yaml` to 7 spell-checker and hyphenation dictionary packages that were missing it, enabling automated release and CVE monitoring. Part of #4121.
 
-| Package | Anitya ID | CPE |
-| --- | --- | --- |
-| `hunspell-fr` | 130209 (grammalecte) | none |
-| `hunspell-it` | 390712 | none |
-| `hunspell-pt-br` | 390759 | none |
-| `hunspell-ru` | 390761 | none |
-| `hunspell-sl` | 390767 | none |
-| `hyphen-de` | 390754 | none |
-| `hyphen-fr` | 390769 | none |
+The table below shows the *originally submitted* IDs and their status after maintainer review. Only the first two are currently confirmed working; the rest were reverted to `id: ~` templates.
 
-**Test plan (as posted on the PR):**
+| Package | Anitya ID (submitted) | CPE | Current status |
+| --- | --- | --- | --- |
+| `hunspell-fr` | 130209 (grammalecte) | none | ✅ Verified, kept |
+| `hunspell-it` | 390712 | none | ✅ Verified, kept |
+| `hunspell-pt-br` | 390759 | none | ↩️ Reverted to template (ID did not resolve) |
+| `hunspell-ru` | 390761 | none | ↩️ Reverted to template (ID did not resolve) |
+| `hunspell-sl` | 390767 | none | ↩️ Reverted to template (ID did not resolve) |
+| `hyphen-de` | 390754 | none | ↩️ Reverted to template (ID did not resolve) |
+| `hyphen-fr` | 390769 | none | ↩️ Reverted to template (ID did not resolve) |
+
+**Test plan (as originally posted on the PR):**
 
 - Verified each `monitoring.yaml` is valid YAML
 - Confirmed all Anitya IDs resolve at [release-monitoring.org](https://release-monitoring.org)
 - Checked the NVD CPE database for each package; none have CVE entries
 
-**Batch 2** (`iscan`, `iscan-data`, `msodbcsql`, and the four Python packages) will follow as a second PR once #9381 is reviewed.
+> **Correction:** the second bullet did not hold up. "Resolve" was checked too loosely — several IDs pointed at Anitya projects with no usable release data, which the maintainer caught. Only `hunspell-fr` and `hunspell-it` genuinely resolve to real version info. See **Maintainer Review** below.
+
+**Batch 2** (`iscan`, `iscan-data`, `msodbcsql`, and the four Python packages) is authored locally but deliberately not yet committed — it will only follow once #9381 is resolved and the verification process has been corrected.
 
 **My Comment on the Issue (2026-06-11):**
 
@@ -345,7 +368,40 @@ A secondary audit checked every `monitoring.yaml` in the repository for a numeri
 - Submit one PR at a time, 5–10 packages per PR
 - Every contribution must be personally understood by the author, regardless of tooling used
 
-**Status:** Batch 1 PR [#9381](https://github.com/getsolus/packages/pull/9381) opened (7 packages, awaiting review); Batch 2 authored and pending commit.
+### Maintainer Review — davidjharder (changes requested)
+
+After the PR was opened, the maintainer first asked whether I had created some of the release-monitoring entries myself, noting *"some don't work,"* then left a formal **changes-requested** review:
+
+> At this moment Solus does not have guidelines for AI usage; so I will substitute my own: If you want human review and approval you must demonstrate that you, the person making this PR, have put some effort into manually verifying any AI outputs. You should also say, preferably in your own words, where and how AI was used.
+>
+> Changes required:
+> - Remove "contribution readme"
+> - Verify the provided anitya IDs are working (return useful version info)
+> - Restore the PR template, including the licensing portion
+> - Briefly explain your use of AI
+
+**My response and follow-up:** I removed the stray contribution readme and restored the PR template with the licensing checkbox, explained my AI use (below), and acknowledged that some of my Anitya projects did not reflect correct releases. I asked the maintainer for guidance on finding valid upstream release sources for the difficult dictionary packages. His reply: the sources for some `hunspell` packages are genuinely unusual — which is largely *why* they still lacked monitoring files — and there is no shortcut beyond trial and error against existing Anitya IDs as examples. My current open question to him is whether the Fedora Updates System is an acceptable fallback upstream for the packages with no native release feed.
+
+**Status:** Batch 1 PR [#9381](https://github.com/getsolus/packages/pull/9381) is **open with changes requested**. `hunspell-fr` and `hunspell-it` are verified and kept; the other five files are reverted to templates while I search for valid sources. Batch 2 authored locally, not yet committed.
+
+---
+
+## AI Usage Disclosure
+
+Per the maintainer's requirement — and because transparency is the right default when contributing to a project that has not yet set its AI policy — here is an honest account of where and how I used AI on this contribution.
+
+**Where AI was used:**
+
+- **Understanding the project.** At the start I used an AI coding assistant (Claude / Claude Code) to explore the `getsolus/packages` repository and explain its structure, the `package.yml`/`monitoring.yaml` layout, the build tooling, and the contribution conventions, so I could get oriented in a large unfamiliar monorepo quickly.
+- **Authoring the monitoring files.** I used AI to help scaffold and fill in the `monitoring.yaml` files — including help researching candidate Anitya IDs and writing regular expressions for the version-scraping URLs used to set up release-monitoring.org projects.
+- **This write-up.** AI assisted in drafting and updating this portfolio document, including this disclosure. The facts, decisions, and the account of what went wrong are mine; AI helped organize and phrase them.
+
+**How I verified the output (and where I fell short):**
+
+- Anitya IDs were meant to be checked on release-monitoring.org and CPEs against the NVD. My honest failure was verifying too shallowly: I treated a syntactically valid file and an existing project page as "working," when several of the projects I set up did not actually expose real releases. The maintainer caught this.
+- The corrective process I now follow: open each `https://release-monitoring.org/project/<id>/` page and confirm it shows recent version data *before* committing an ID; when it does not, leave the file as an `id: ~` template rather than ship a placeholder that looks complete. `hunspell-fr` and `hunspell-it` passed this bar; the other five did not and were rolled back.
+
+**Takeaway:** AI was useful for orientation and boilerplate, but the release-monitoring work requires human judgment about whether an upstream source is real and scrapeable — exactly the kind of verification the maintainer insisted on, and the part I under-did the first time.
 
 ---
 
@@ -366,7 +422,10 @@ A secondary audit checked every `monitoring.yaml` in the repository for a numeri
 
 ### What I'd Do Differently Next Time
 
-[To be filled in after completion]
+- **Verify Anitya IDs properly before committing, not after.** The biggest lesson: a valid-looking `monitoring.yaml` is not a working one. I'd confirm each ID resolves to real upstream release data on release-monitoring.org before it ever reaches a commit, and leave anything unconfirmed as a template.
+- **Don't over-rely on AI for the judgment part.** AI was fine for orientation and boilerplate, but deciding whether an upstream source is genuine and scrapeable is human work — skipping that is what produced the bad IDs.
+- **Keep the PR clean from the start.** Never commit personal/portfolio files into the target repo, and double-check the PR template and licensing checkbox are intact before opening.
+- **Pick the tractable packages first and be honest about the hard ones.** Several of these packages are unmonitored precisely because their upstreams have no release feed; I'd flag those as "no viable source yet" early rather than force an ID.
 
 ---
 
