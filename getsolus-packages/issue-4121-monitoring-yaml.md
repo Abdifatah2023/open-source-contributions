@@ -3,7 +3,7 @@
 **Contribution Number:** 1  
 **Student:** Cabdifataax Maxamuud  
 **Issue:** [getsolus/packages #4121](https://github.com/getsolus/packages/issues/4121)  
-**Status:** Phase II – In Review. Batch 1 PR [#9381](https://github.com/getsolus/packages/pull/9381) received a **changes-requested** review; rework in progress. Only `hunspell-fr` and `hunspell-it` have verified Anitya IDs so far; the other five Batch 1 files were reverted to templates after their IDs proved invalid. Batch 2 is authored locally but not yet committed.
+**Status:** Phase II – In Review. Batch 1 PR [#9381](https://github.com/getsolus/packages/pull/9381) remains **open with changes requested**; rework in progress. Only `hunspell-fr` and `hunspell-it` have verified Anitya IDs; the other five Batch 1 files were reverted to templates after their IDs proved invalid. As of **2026-07-11**, the four Python packages (`python-sip-4`, `python-sphinx-rtd-theme`, `python-sphinx-lv2-theme`, `python2-setuptools`) are now set up on Anitya with `monitoring.yaml` files authored and ready to ship as a separate PR — **awaiting maintainer direction**. Two questions are still pending with `davidjharder`: (1) whether the Fedora Updates System is an acceptable fallback upstream for the packages with no native release feed, and (2) whether to open the separate Python-package PR now.
 
 ---
 
@@ -172,7 +172,7 @@ Using UMPIRE framework (adapted):
 
 1. ~~Run the `find` command to confirm the current list of remaining packages~~ ✓ Confirmed: 14 actionable packages (`python2-cairo` and `sqlheavy` are gone from the repo)
 
-**Implement:** Batch 1 (7 `hunspell-*`/`hyphen-*` packages) committed on `add-monitoring-yml-batch1` and submitted as PR [#9381](https://github.com/getsolus/packages/pull/9381). The PR then received a **changes-requested** review (see **Pull Request → Maintainer Review**), which surfaced that several of the Anitya IDs did not actually resolve to useful upstream release data. Five of the seven Batch 1 files were reverted to their template skeletons pending real upstream sources; only `hunspell-fr` and `hunspell-it` remain filled in. Batch 2 (7 Python/proprietary packages) is authored locally but held back and not yet committed. See **Code Changes** for branch and per-package commit links.
+**Implement:** Batch 1 (7 `hunspell-*`/`hyphen-*` packages) committed on `add-monitoring-yml-batch1` and submitted as PR [#9381](https://github.com/getsolus/packages/pull/9381). The PR then received a **changes-requested** review (see **Pull Request → Maintainer Review**), which surfaced that several of the Anitya IDs did not actually resolve to useful upstream release data. Five of the seven Batch 1 files were reverted to their template skeletons pending real upstream sources; only `hunspell-fr` and `hunspell-it` remain filled in. The four Python packages (Batch 2) have since been set up on Anitya with `monitoring.yaml` files authored and ready (2026-07-11), offered to the maintainer as a separate PR and awaiting his direction; the three proprietary packages (Batch 3) remain authored locally, held back for extra CPE/vendor research. See **Code Changes** for branch and per-package commit links.
 
 **Review:** Each file was checked against the schema in the reference examples and validated as valid YAML. The critical gap caught in review: passing YAML validation is *not* the same as a working Anitya ID — an `id` can be syntactically fine yet point at a project with no usable release feed. Anitya IDs must be verified to return real version info at `https://release-monitoring.org/project/<id>/`, which is now the corrective focus. See **Testing Strategy**.
 
@@ -230,7 +230,7 @@ done
 
 **Result (initial):** all files parsed as valid YAML. **Important correction:** valid YAML with a numeric `id` was treated as "done" too early. Maintainer review then showed that several of the numeric IDs — particularly the sequential `390xxx` IDs, some of which were Anitya projects I had created myself during this work — did **not** return useful upstream release data. As a result, the current verified state is narrower than this check implied:
 
-- **Verified, working Anitya IDs:** `hunspell-fr` → 130209 (grammalecte), `hunspell-it` → 390712. Batch 2's pre-existing project IDs (`python-sip-4` → 13626, `python-sphinx-rtd-theme` → 232897, `python-sphinx-lv2-theme` → 267121, `python2-setuptools` → 4021) also resolve, but Batch 2 is not yet committed or submitted.
+- **Verified, working Anitya IDs:** `hunspell-fr` → 130209 (grammalecte), `hunspell-it` → 390712. The four Python packages (Batch 2) also resolve — `python-sip-4` → 13626, `python-sphinx-rtd-theme` → 232897, `python-sphinx-lv2-theme` → 267121, `python2-setuptools` → 4021 — and their `monitoring.yaml` files are authored and ready (2026-07-11), pending only maintainer direction on opening a separate PR.
 - **Reverted to template (`id: ~`):** `hunspell-pt-br`, `hunspell-ru`, `hunspell-sl`, `hyphen-de`, `hyphen-fr` — their IDs did not resolve to usable release feeds, so they were rolled back rather than shipped with bad data.
 
 Lesson: a numeric `id` is necessary but not sufficient — the ID must actually point at a project Anitya can scrape for versions.
@@ -241,8 +241,9 @@ Lesson: a numeric `id` is necessary but not sufficient — the ID must actually 
 - [x] Packages with `id: ~` elsewhere in the repo confirmed intentional (maintainer comment present)
 - [x] `hunspell-fr` (130209) and `hunspell-it` (390712) IDs confirmed to resolve at `https://release-monitoring.org/project/<id>/` with real version data
 - [ ] **Blocking:** confirm the remaining Batch 1 IDs resolve to a usable release feed — currently failing, so those five files are reverted to templates
-- [ ] Locate valid upstream release sources (or an accepted fallback) for `hunspell-pt-br`, `hunspell-ru`, `hunspell-sl`, `hyphen-de`, `hyphen-fr`
-- [ ] Re-verify Batch 2 IDs and CPEs, then commit and open a second PR (only after #9381 is resolved)
+- [ ] Locate valid upstream release sources (or an accepted fallback, e.g. Fedora Updates System) for `hunspell-pt-br`, `hunspell-ru`, `hunspell-sl`, `hyphen-de`, `hyphen-fr` — pending maintainer confirmation on the fallback
+- [x] Re-verify Batch 2 (Python) IDs — `python-sip-4` (13626), `python-sphinx-rtd-theme` (232897), `python-sphinx-lv2-theme` (267121), `python2-setuptools` (4021) confirmed to resolve on Anitya; `monitoring.yaml` files authored (2026-07-11)
+- [ ] Open the separate Python-batch PR — offered to the maintainer; awaiting his direction
 
 ### Manual Testing
 
@@ -282,10 +283,11 @@ These confirm the schema shown in the "Understanding the Issue" section above is
 
 All 14 actionable packages from the remaining list have now had a `monitoring.yaml` file authored. None of these packages had any prior monitoring file in the repository (confirmed via `git log` on each package directory) — every file in this contribution is newly created, following the repo's dominant `.yaml` convention (4834 `.yaml` files vs. 3 legacy `.yml`).
 
-Work was split into two batches per maintainer guidance (5–10 packages per PR):
+Work was split into batches per maintainer guidance (5–10 packages per PR):
 
 - **Batch 1 — committed and submitted as PR [#9381](https://github.com/getsolus/packages/pull/9381) (7 packages):** the dictionary/hyphenation set `hunspell-fr` (130209), `hunspell-it` (390712), `hunspell-pt-br` (390759), `hunspell-ru` (390761), `hunspell-sl` (390767), `hyphen-de` (390754), `hyphen-fr` (390769). Each was scaffolded, given its looked-up Anitya `id`, set to `rss: ~` where no feed exists, and marked `cpe: ~` with a dated `# No known CPE` comment. One commit per package (see Code Changes).
-- **Batch 2 — authored, pending commit (7 packages):** `iscan`, `iscan-data`, `msodbcsql`, `python-sip-4`, `python-sphinx-lv2-theme`, `python-sphinx-rtd-theme`, `python2-setuptools`. New `monitoring.yaml` files exist in the working tree (currently untracked) with Anitya IDs filled in (e.g. `iscan` → id `390774`, `python-sip-4` → id `13626`), `cpe: ~`, and a `# No known CPE, checked 2026-06-19` note.
+- **Batch 2 — Python (4 packages):** `python-sip-4` (13626), `python-sphinx-rtd-theme` (232897), `python-sphinx-lv2-theme` (267121), `python2-setuptools` (4021). Set up on Anitya with `monitoring.yaml` files authored; IDs confirmed to resolve to real release data (see Week 5 Progress).
+- **Batch 3 — proprietary (3 packages):** `iscan`, `iscan-data`, `msodbcsql`. New `monitoring.yaml` files exist in the working tree (currently untracked) with Anitya IDs filled in (e.g. `iscan` → id `390774`), `cpe: ~`, and a `# No known CPE, checked 2026-06-19` note — held back for extra CPE/vendor research.
 
 A secondary audit checked every `monitoring.yaml` in the repository for a numerical Anitya ID. 112 packages were found with `id: ~` (YAML null) — this is intentional: each contains a comment (e.g. referencing issue #4533) confirming the package will never benefit from automated monitoring. No corrective action was needed.
 
@@ -303,6 +305,14 @@ PR #9381 received a **changes-requested** review from maintainer `davidjharder`.
 - Posted an AI-usage explanation on the PR (see **AI Usage Disclosure**).
 - Began hunting for real upstream release sources for the reverted packages. Two were re-established via upstream feeds; the remaining five are hard because several `hunspell-*`/`hyphen-*` sources are unusual and lack a scrapeable release/tags feed — which the maintainer confirmed is *why* these were among the last packages without monitoring files. An open question is pending with the maintainer: whether the Fedora Updates System can serve as an accepted fallback upstream source for Anitya when no native feed exists.
 
+### Week 5 Progress — Re-engagement & Python Batch
+
+After a quiet stretch on the PR, maintainer `davidjharder` checked in on **2026-07-05** (*"Any interest in taking this further?"*). I confirmed I was still on it the next day (**2026-07-06**, *"Yes, for sure!"*) and returned to the two open fronts: the reverted dictionary packages and the untouched Python batch.
+
+**Dictionary packages (`hunspell-*` / `hyphen-*`).** I re-confirmed that only `hunspell-fr` and `hunspell-it` have upstream sources Anitya can actually scrape; the other five remain `id: ~` templates because their upstreams expose no usable releases/tags feed. This matches the maintainer's own assessment that these sources are *"very weird"* — which is precisely why they were among the last packages left without a monitoring file. Searching for an alternative, I found that the **Fedora Updates System** lists existing Hunspell projects and could serve as a fallback upstream release source for Anitya. On **2026-07-06** I asked `davidjharder` whether using the Fedora Updates System as a fallback is acceptable, or whether these files should simply stay as templates. **That question is still unanswered.**
+
+**Python batch (ready).** Rather than block on the difficult dictionary sources, I moved the Python packages forward. On **2026-07-11** I finished setting up the four Python packages — `python-sip-4` (13626), `python-sphinx-rtd-theme` (232897), `python-sphinx-lv2-theme` (267121), and `python2-setuptools` (4021) — on Anitya and authored their `monitoring.yaml` files. These are well-known upstreams that resolve cleanly to real release data, so they are far more tractable than the hunspell/hyphen set. I told the maintainer these are ready and offered to open a **separate PR** for them, since they are easier to monitor and independent of the stalled dictionary sources. As of this update I am **awaiting his direction** on whether to open that second PR now or fold the work into #9381 — no reply yet to either the Fedora-fallback question (Jul 6) or the separate-PR question (Jul 11).
+
 ### Code Changes
 
 - **Active branch:** [Abdifatah2023/packages — add-monitoring-yml-batch1](https://github.com/Abdifatah2023/packages/tree/add-monitoring-yml-batch1)
@@ -314,7 +324,8 @@ PR #9381 received a **changes-requested** review from maintainer `davidjharder`.
   - [`cc3ef05`](https://github.com/Abdifatah2023/packages/commit/cc3ef05a09) — `hunspell-sl: Add monitoring.yaml`
   - [`6f99157`](https://github.com/Abdifatah2023/packages/commit/6f99157ad1) — `hyphen-de: Add monitoring.yaml`
   - [`bc1505f`](https://github.com/Abdifatah2023/packages/commit/bc1505ffbb) — `hyphen-fr: Add monitoring.yaml`
-- **Pending (Batch 2, not yet committed):** `iscan`, `iscan-data`, `msodbcsql`, `python-sip-4`, `python-sphinx-lv2-theme`, `python-sphinx-rtd-theme`, `python2-setuptools` — new `monitoring.yaml` files authored in the working tree (untracked). Held back until #9381 is resolved and each ID has been re-verified against release-monitoring.org under the corrected process.
+- **Ready, awaiting maintainer (Batch 2 — Python):** `python-sip-4` (13626), `python-sphinx-rtd-theme` (232897), `python-sphinx-lv2-theme` (267121), `python2-setuptools` (4021) — set up on Anitya (2026-07-11) with `monitoring.yaml` files authored and their IDs confirmed to resolve to real release data. Offered as a separate PR; awaiting `davidjharder`'s direction on whether to open it now.
+- **Pending (Batch 3 — proprietary, not yet committed):** `iscan`, `iscan-data`, `msodbcsql` — new `monitoring.yaml` files authored in the working tree (untracked), held back for extra CPE/vendor research (Epson, Microsoft) once the Python batch lands.
 - **Pull request (Batch 1):** [getsolus/packages #9381](https://github.com/getsolus/packages/pull/9381) — opened against upstream, references #4121.
 - **Approach decisions:** Following maintainer guidance — one PR at a time, 5–10 packages per PR, each package as its own commit. The `hunspell-*` / `hyphen-*` dictionary packages formed the first batch; the Python and proprietary packages form the second.
 
@@ -346,7 +357,7 @@ The table below shows the *originally submitted* IDs and their status after main
 
 > **Correction:** the second bullet did not hold up. "Resolve" was checked too loosely — several IDs pointed at Anitya projects with no usable release data, which the maintainer caught. Only `hunspell-fr` and `hunspell-it` genuinely resolve to real version info. See **Maintainer Review** below.
 
-**Batch 2** (`iscan`, `iscan-data`, `msodbcsql`, and the four Python packages) is authored locally but deliberately not yet committed — it will only follow once #9381 is resolved and the verification process has been corrected.
+**Batch 2** (the four Python packages) is now set up on Anitya with `monitoring.yaml` files authored and ready (2026-07-11); it has been offered to the maintainer as a separate PR and is awaiting his direction. **Batch 3** (`iscan`, `iscan-data`, `msodbcsql`) remains authored locally, deliberately held back for extra CPE/vendor research once the Python batch lands.
 
 **My Comment on the Issue (2026-06-11):**
 
@@ -380,9 +391,18 @@ After the PR was opened, the maintainer first asked whether I had created some o
 > - Restore the PR template, including the licensing portion
 > - Briefly explain your use of AI
 
-**My response and follow-up:** I removed the stray contribution readme and restored the PR template with the licensing checkbox, explained my AI use (below), and acknowledged that some of my Anitya projects did not reflect correct releases. I asked the maintainer for guidance on finding valid upstream release sources for the difficult dictionary packages. His reply: the sources for some `hunspell` packages are genuinely unusual — which is largely *why* they still lacked monitoring files — and there is no shortcut beyond trial and error against existing Anitya IDs as examples. My current open question to him is whether the Fedora Updates System is an acceptable fallback upstream for the packages with no native release feed.
+**My response and follow-up:** I removed the stray contribution readme and restored the PR template with the licensing checkbox, explained my AI use (below), and acknowledged that some of my Anitya projects did not reflect correct releases. I asked the maintainer for guidance on finding valid upstream release sources for the difficult dictionary packages. His reply (**2026-06-26**): the sources for some `hunspell` packages are genuinely unusual — which is largely *why* they still lacked monitoring files — and there is no shortcut beyond trial and error against existing Anitya IDs as examples.
 
-**Status:** Batch 1 PR [#9381](https://github.com/getsolus/packages/pull/9381) is **open with changes requested**. `hunspell-fr` and `hunspell-it` are verified and kept; the other five files are reverted to templates while I search for valid sources. Batch 2 authored locally, not yet committed.
+**Conversation timeline (through 2026-07-11):**
+
+- **2026-06-22 — davidjharder:** *"did you create some of these release-monitoring entries as well? Some don't work."*
+- **2026-06-26 — me:** Removed `contribution_readme`, restored the PR template, gave the AI-usage explanation, and asked for help finding version URLs — noting that I had started from the homepage/source links in each `package.yml`, but many have no releases/tags feed for Anitya to scrape.
+- **2026-06-26 — davidjharder:** Hunspell sources are *"very weird"*; no advice beyond trial and error against existing Anitya IDs.
+- **2026-07-05 — davidjharder:** *"Any interest in taking this further?"*
+- **2026-07-06 — me:** *"Yes, for sure!"* — then reported I could locate real upstream sources only for `hunspell-fr` and `hunspell-it`, left the other five as templates, and asked whether the **Fedora Updates System** (which lists existing Hunspell projects) is an acceptable fallback upstream or whether those files should stay as templates. *(Unanswered.)*
+- **2026-07-11 — me:** Added the four Python packages to Anitya and created their `monitoring.yaml` files; offered to open a **separate PR** for them since they are easier to monitor than the hunspell/hyphen set, and asked where to take it next. *(Unanswered.)*
+
+**Status:** Batch 1 PR [#9381](https://github.com/getsolus/packages/pull/9381) is **open with changes requested**. `hunspell-fr` and `hunspell-it` are verified and kept; the other five files are reverted to templates while I search for valid sources. The four Python packages (Batch 2) are now set up on Anitya with `monitoring.yaml` files authored and ready — offered as a separate PR and **awaiting maintainer direction**. Both open questions to `davidjharder` (Fedora fallback, and whether to open the Python PR) are still awaiting a reply.
 
 ---
 
